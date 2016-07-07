@@ -11,14 +11,12 @@ def standard_body(body):
 		i=i+1
 	return body[0:i].lower() + body[i:]
 	
-def is_animal(word,base ='lamb'):
-	animal = wn.synset(base+'.n.01')
+def is_hyper_of(word,base):
+	base = wn.synset(base+'.n.01')
 	if wn.synsets(word,'n'):
-		syns = wn.synsets(word,'n')[0]
+		w = wn.synsets(word,'n')[0]
 	else:
 		return False
-	return wn.synset('animal.n.01') in animal.common_hypernyms(syns)
-
-
+	return base in base.lowest_common_hypernyms(w)
 
 	

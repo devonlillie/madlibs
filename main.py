@@ -10,6 +10,7 @@ fables = text.split('\n\n\n\n')
 titles = []
 bodies = []
 
+## Import stories into list and store as dataframe
 for story in fables:
 	if '\n\n' in story:
 		title,body = story.split('\n\n',1)
@@ -20,21 +21,40 @@ for story in fables:
 		titles+=['Unknown']
 		bodies+=[standard_body(story)]
 		
+### -------------------------- ###
+#      Tokenize and tag text     #
+### -------------------------- ###
 stories = pd.DataFrame({'title':titles,'body':bodies})
-
-stories['sents'] = stories['body'].map(lambda x: 
-		[nltk.word_tokenize(sent) for sent in nltk.sent_tokenize(x)])
+stories['sents'] = stories['body'].map(lambda x: nltk.sent_tokenize(x))
+stories['words'] = stories['sents'].map(lambda x: [[w.lower() for w in nltk.word_tokenize(s)] for s in x])
 
 from nltk.tag.perceptron import PerceptronTagger
 tagger = PerceptronTagger()
-from nltk.corpus import wordnet as wn
-	
-all_nouns = pd.DataFrame()
-for i in range(len(stories)):
-	story = stories.iloc[i]
-	tags = tag_text(story['title'],story['sents'],tagger)
-	nouns = tags.loc[tags['tag']=='NN',['word']]
-	nouns['animal'] = nouns['word'].map(lambda x: is_animal(x))
-	all_nouns = all_nouns.append(nouns)
-	
+stories['tags'] = stories['words'].map(lambda x: [tagger.tag(s) for s in x])
+
+### -------------------------- ###
+#  Categorize tags into genres   #
+### -------------------------- ###
+# Note: Standards replace 'TG' with '{CLASS}' i.e. 'NN' -> '{ANML}'
+""" Genres:
+ - occupation
+ - animals: is_animal
+ - body parts: 
+ - exclamation
+ - food
+ - location
+"""
+is_animal = lambda x: is_hyper_of(x,'animal')
+is_bodypart = lambda x: is_hyper_of(x,'body_part')
+
+stories['tags'] = stories['tags'].map(lambda x: replace_tags(x,'ANML','NN',is_animal))
+stories['tags'] = stories['tags'].map(lambda x: replace_tags(x,'BPRT','NN',is_bodypart))
+
+animals = find_tags(stories.loc[0,'tags'],'{ANML}')
+all_parts =[]
+for i in stories.index:
+	all_parts += set(find_tags(stories.loc[i,'tags'],'{BPRT}'))
+
+## NEXT : match tags by starting with to catch NNS and NN
+
 	

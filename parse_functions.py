@@ -5,11 +5,23 @@ def find_subtrees(tree,code):
 	for br in tree:
 		if type(br) is tuple:
 			return True
-			
-def tag_text(title,sentences,t):
-	tags = [t.tag(sent) for sent in sentences]
-	wds = [w[0] for x in tags for w in x]
-	tgs = [w[1] for x in tags for w in x]
-	return pd.DataFrame({'word':wds,'tag':tgs})
+
+def find_tags(tree,tag):
+	matches = []
+	for br in tree:
+		if type(br) is list:
+			matches = matches+find_tags(br,tag)
+		else:
+			matches += br if br[1]==tag else []
+	return matches
 	
+def print_tags(t):
+	if type(t) is tuple:
+		return '/'.join(t)
+	else:
+		return ' '.join([print_tags(i) for i in t])
+
+
+def replace_tags(sents,newlbl,pos,func):
+	return [[(a,'{%s}'%newlbl) if (func(a) and b==pos )else (a,b) for (a,b) in s ] for s in sents]
 	
